@@ -1,0 +1,55 @@
+{{ block "index" . }}
+<!doctype html>
+<html>
+
+<head>
+    <title></title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content=" width=device-width, initial-scale=1" />
+    <script src="https://unpkg.com/htmx.org@1.9.11"></script>
+</head>
+
+<body>
+    {{ template "form" .Form}}
+    <hr />
+    {{ template "display" .Data}}
+    <script>
+        document.addEventListener('DOMContentLoaded', event => {
+            document.body.addEventListener('htmx:beforeSwap', function (evt) {
+                if (evt.detail.xhr.status === 422) {
+                    // allow 422 response to swap as we are using this as a signal
+                    // 	that a form was submitted with bad data and want to rerended with the errors
+
+                    // set isError to false to avoid error logging in console
+                    evt.detail.shouldSwap = true;
+                    evt.detail.isError = false;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
+{{ end }} {{ block "form" .}}
+<form hx-swap="outerHTML" hx-post="/contacts">
+    name :
+    <input {{if .Values.name }} value="{{ .Values.name }}" {{ end }} type="text" name="name" />
+    email :
+    <input {{ if .Values.email }} value="{{ .Values.email }}" {{ end }} type="text" name="email" />
+    {{ if .Errors.email }}
+    <p style="color: red">{{ .Errors.email }}</p>
+    {{ end }}
+    <button type="submit">Submit</button>
+</form>
+{{ end }} {{block "display" .}}
+<div id="contacts">
+    {{ range .Contacts }} {{ template "contact" . }} {{ end }}
+</div>
+{{ end }} {{ block "contact" .}}
+<div>
+    <p>Name : {{ .Name }}</p>
+    <p>Email :{{ .Email }}</p>
+</div>
+{{ end }} {{ block "oob-contact" .}}
+<div id="contacts" hx-swap-oob="afterbegin">{{ template "contact" .}}</div>
+{{ end }}
